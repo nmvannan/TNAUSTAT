@@ -1,0 +1,122 @@
+# Variability with CRD Multiple traits using for loop
+# ver 01.12.2020
+library(openxlsx)
+mydata <- read.xlsx(file.choose()) 
+mydata$Treat<-as.factor(mydata$Treat)
+mydata$Repl<-as.factor(mydata$Repl)
+nch<-length(mydata)
+ch<-names(mydata[,3:nch]) 
+tn<-length(unique(mydata$Treat))
+rn<-length(unique(mydata$Repl))
+resfile<-array(dim=c(tn+18,nch-1))
+resfile[1,1]<-c("Treat")
+
+for (h in 1:length(ch)) 
+{
+  resfile[1,h+1]<-ch[h]
+}
+
+for (h in 1: length(ch))
+{
+  data<-array(dim=c(tn,rn))
+  treatt<-array(data=0,dim=c(tn))
+  replt<-array(data=0,dim=c(rn))
+  replts<-treatts<-ats<-gt<-tss<-cf<-gmean<-0
+  x<-ssrepl<-msrepl<-sstreat<-mstreat<-sserro<-mserro<-0
+  
+  for (t in 1:tn) {
+    for (r in 1:rn) {
+      x<-x+1
+      data[t,r]<-mydata[x,h+2]
+    }
+  }
+  
+  for (t in 1:tn) {
+    for (r in 1:rn) {
+      gt<-gt+data[t,r]
+      ats=ats+data[t,r]^2
+      treatt[t]<-treatt[t]+data[t,r]
+      replt[r]<-replt[r]+data[t,r]
+    }
+    treatts<-treatts+treatt[t]^2
+  }
+  
+  
+  
+  for (t in 1:tn) {
+    resfile[t+1,h+1]<-treatt[t]/rn
+  }
+  
+  
+  for (r in 1:rn) {
+    replts=replts+replt[r]^2
+  }
+  cf<-gt^2/(tn*rn)
+  ssrepl<-replts/tn-cf
+  sstreat<-treatts/rn-cf
+  tss<-ats-cf
+  sserro<-tss-sstreat
+  errodf<-tn*(rn-1)
+  mserro<-sserro/errodf
+  msrepl<-ssrepl/(rn-1)
+  mstreat<-sstreat/(tn-1)
+  se<-sqrt(mserro/rn)
+  sed<-se*sqrt(2)
+  gmean<-gt/(tn*rn)
+  cv<-sqrt(mserro)/gmean*100
+  ev<-mserro
+  gv<-(mstreat-ev)/rn
+  pv<-gv+ev
+  pcv<-(pv^0.5/gmean)*100
+  gcv<-(gv^0.5/gmean)*100
+  h2<-(gv/pv)*100
+  ga<-(gv/pv)*pv^0.5*2.06
+  gam<-ga/gmean*100
+  
+  resfile[tn+2,h+1]<- format(mstreat)
+  resfile[tn+3,h+1]<- format(mserro)
+  resfile[tn+4,h+1]<- format(mstreat/mserro)
+  resfile[tn+5,h+1]<- format(qf(0.95,df1=(tn-1),df2=errodf))
+  resfile[tn+6,h+1]<- format(tn-1)
+  resfile[tn+7,h+1]<- format(errodf)
+  resfile[tn+8,h+1]<- format(pv)
+  resfile[tn+9,h+1]<- format(gv)
+  resfile[tn+10,h+1]<- format(pcv)
+  resfile[tn+11,h+1]<- format(gcv)
+  resfile[tn+12,h+1]<- format(h2)
+  resfile[tn+13,h+1]<- format(gam)
+  resfile[tn+14,h+1]<- format(gmean)
+  resfile[tn+15,h+1]<- format(se)
+  resfile[tn+16,h+1]<- format(sed)
+  resfile[tn+17,h+1]<- format(sed*qt(0.975,df=errodf))
+  resfile[tn+18,h+1]<- format(cv)
+}
+
+for (t in 1:tn)
+{
+  resfile[t+1,1]<-t
+}
+
+resfile[tn+2,1]<- c("TreatMS")
+resfile[tn+3,1]<- c("ErrorMS")
+resfile[tn+4,1]<- c("F ratio")
+resfile[tn+5,1]<- c("FTab Val")
+resfile[tn+6,1]<- c("df Treat")
+resfile[tn+7,1]<- c("df Error")
+resfile[tn+8,1]<- c("PV")
+resfile[tn+9,1]<- c("GV")
+resfile[tn+10,1]<- c("PCV (%)")
+resfile[tn+11,1]<- c("GCV (%)")
+resfile[tn+12,1]<- c("h2 (%)")
+resfile[tn+13,1]<- c("GAM (%)")
+resfile[tn+14,1]<- c("Mean")
+resfile[tn+15,1]<- c("SE")
+resfile[tn+16,1]<- c("SEd")
+resfile[tn+17,1]<- c("CD(P=5%)")
+resfile[tn+18,1]<- c("CV (%)")
+
+sink(file="output.txt",append=FALSE,split=FALSE)
+print(resfile,quote=FALSE)
+sink()
+rm(list=ls())
+
