@@ -1,0 +1,140 @@
+# ANOVA table for FRBD 2 Factor- Multiple traits using for loop
+# ver 20.11.2020
+library(openxlsx)
+mydata <- read.xlsx(file.choose()) 
+mydata$FactorA<-as.factor(mydata$FactorA)
+mydata$FactorB<-as.factor(mydata$FactorB)
+mydata$Repl<-as.factor(mydata$Repl)
+nch<-length(mydata)
+ch<-names(mydata[,4:nch]) 
+
+an<-length(unique(mydata$FactorA))
+bn<-length(unique(mydata$FactorB))
+tn<-an*bn
+rn<-length(unique(mydata$Repl))
+
+
+sink(file="output.txt",append=FALSE,split=FALSE)
+for (h in 1: length(ch))
+{  cat('ANOVA for', ch[h],"\n")
+  P <- aov(data=mydata, as.numeric(unlist(mydata[ch[h]])) ~Repl+FactorA+FactorB+FactorA*FactorB)
+  print( summary(P))
+
+  
+  data<-array(data=0,dim=c(an,bn,rn))
+  atreatt<-array(data=0,dim=c(an))
+  btreatt<-array(data=0,dim=c(bn))
+  abtreatt<-array(data=0,dim=c(an,bn))
+                 replt<-array(data=0,dim=c(rn))
+                 replts<-atreatts<-btreatts<-ats<-gt<-tss<-cf<-gmean<-0
+                 x<-ssrepl<-ssatreat<-ssbtreat<-sserro<-0
+                 msrepl<-msatreat<-msbtreat<-abtreatts<-mserro<-0
+                 
+                 for (a in 1:an) 
+                 {
+                   for (b in 1:bn)
+                   {
+                     for (r in 1:rn) 
+                     {
+                       x<-x+1
+                       data[a,b,r]<-mydata[x,h+3]
+                       
+                     }
+                   }
+                 }
+                
+                 
+                 
+                 
+                
+                 
+                  for (a in 1:an) 
+                 {
+                   for (b in 1: bn)
+                   {
+                     for (r in 1:rn) 
+                     {
+                       gt<-gt+data[a,b,r]
+                       ats=ats+data[a,b,r]^2
+                       atreatt[a]<-atreatt[a]+data[a,b,r]
+                       btreatt[b]<-btreatt[b]+data[a,b,r]
+                       abtreatt[a,b]<-abtreatt[a,b]+data[a,b,r]
+                       replt[r]<-replt[r]+data[a,b,r]
+                     }
+                     abtreatts<-abtreatts+abtreatt[a,b]^2
+                   }
+                 }
+                
+                 for (a in 1:an) 
+                 {
+                   atreatts<-atreatts+atreatt[a]^2
+                 }
+                 for (b in 1:bn) 
+                 {
+                   btreatts<-btreatts+btreatt[b]^2
+                 }  
+                 
+                 for (r in 1:rn) 
+                 {
+                   replts=replts+replt[r]^2
+                 }
+                 
+                 cf<-gt^2/(tn*rn)
+                 ssrepl<-replts/tn-cf
+                 ssatreat<-atreatts/(bn*rn)-cf
+                 ssbtreat<-btreatts/(an*rn)-cf
+                 ssabtreat<-abtreatts/rn-cf
+                 ssabtreat<-ssabtreat-ssatreat-ssbtreat
+                 tss<-ats-cf
+                 sserro<-tss-ssrepl-ssatreat-ssbtreat-ssabtreat
+                 errodf<-(rn-1)*(tn-1)
+                 mserro<-sserro/errodf
+                 msrepl<-ssrepl/(rn-1)
+                 msatreat<-ssatreat/(an-1)
+                 msbtreat<-ssbtreat/(bn-1)
+                 msabtreat<-ssabtreat/((an-1)*(bn-1))
+                 se<-sqrt(mserro/rn)
+                 sed<-se*sqrt(2)
+                 gmean<-gt/(tn*rn)
+                 cv<-sqrt(mserro)/gmean*100
+                 sea<-sqrt(mserro/(bn*rn))
+                 seda<-sea*sqrt(2)
+                 seb<-sqrt(mserro/(an*rn))
+                 sedb<-seb*sqrt(2)
+               
+cat("\n")
+cat('Mean of A Factor',"\n")
+  for (a in 1:an)
+  {
+    cat(a,atreatt[a]/(bn*rn),"\n")
+  }
+cat("SE for A=",sea,"\n")
+cat("SEd for A=",seda,"\n")
+cat("CD(P=5%) for A=",seda*qt(0.975,errodf),"\n")
+cat("\n")
+cat('Mean of B Factor',"\n")
+    for (b in 1:bn)
+  {
+    cat(b,btreatt[b]/(an*rn),"\n")
+  }  
+cat("SE for B=",seb,"\n")
+cat("SEd for B=",sedb,"\n")
+cat("CD(P=5%) for B=",sedb*qt(0.975,errodf),"\n")
+cat("\n")
+cat('Mean of A x B Factor',"\n")  
+
+  for (a in 1:an)
+  { 
+    for (b in 1:bn)
+    {
+    cat("A",a,"B",b,abtreatt[a,b]/rn,"\n")
+    }
+  }
+cat("SE for AB=",se,"\n")
+cat("SEd for AB=",sed,"\n")
+cat("CD(P=5%) for AB=",sed*qt(0.975,errodf),"\n")
+cat("CV(%)=",cv,"\n")
+cat("_____________________________________________","\n")
+}
+sink()
+rm(list=ls())
